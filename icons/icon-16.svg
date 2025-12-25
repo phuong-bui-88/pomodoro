@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- Tomato circle -->
+  <circle cx="8" cy="8" r="7.5" fill="#ff6b5a"/>
+  
+  <!-- Highlight -->
+  <ellipse cx="6" cy="6" rx="2" ry="2.5" fill="#ff8b7a" opacity="0.6"/>
+  
+  <!-- Stem -->
+  <g fill="#52b788">
+    <rect x="6.5" y="0.5" width="3" height="3.5" rx="1.5"/>
+    <path d="M9.5 1 Q11.5 0.5 13 1 Q11 2.5 9.5 3" fill="#66bb6a"/>
+  </g>
+  
+  <!-- Clock hands -->
+  <g stroke="#ffffff" stroke-width="0.8" stroke-linecap="round">
+    <line x1="8" y1="8" x2="8" y2="4.5" />
+    <line x1="8" y1="8" x2="11" y2="8" />
+  </g>
+  
+  <!-- Center dot -->
+  <circle cx="8" cy="8" r="0.8" fill="#ffffff"/>
+</svg>
