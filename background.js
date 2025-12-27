@@ -167,8 +167,6 @@ function updateBadgeDisplay() {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("action", request.action);
-
     switch (request.action) {
         case 'getState':
             sendResponse({ state: timerState });
