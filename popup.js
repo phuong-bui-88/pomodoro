@@ -16,15 +16,17 @@ class PomodoroTimer {
     this.breakDurationSelect = document.getElementById("breakDuration");
     this.toggleSwitch = document.getElementById("workBreakToggle");
     this.sessionLabel = document.getElementById("sessionLabel");
-    this.pomodoroCountEl = document.getElementById("pomodoroCount");
-    this.totalWorkTimeEl = document.getElementById("totalWorkTime");
-    this.totalBreakTimeEl = document.getElementById("totalBreakTime");
     this.soundNotification = document.getElementById("soundNotification");
     this.desktopNotification = document.getElementById("desktopNotification");
     this.autoStartBreak = document.getElementById("autoStartBreak");
     this.resetStatsBtn = document.getElementById("resetStatsBtn");
     this.tabBtns = document.querySelectorAll(".tab-btn");
     this.tabContents = document.querySelectorAll(".tab-content");
+    this.calendarDaysContainer = document.getElementById("calendarDays");
+    this.monthYearDisplay = document.getElementById("monthYearDisplay");
+    this.prevMonthBtn = document.getElementById("prevMonthBtn");
+    this.nextMonthBtn = document.getElementById("nextMonthBtn");
+    this.currentCalendarDate = new Date();
   }
 
   setupMessageListener() {
@@ -39,7 +41,7 @@ class PomodoroTimer {
   playTimerAlert(message, wasWorkSession) {
     // Play sound
     this.playNotificationSound();
-    
+
     // Sync with background to update UI to show new session
     this.syncWithBackground();
 
@@ -95,6 +97,12 @@ class PomodoroTimer {
     this.resetBtn.addEventListener("click", function () {
       self.reset();
     });
+    this.prevMonthBtn.addEventListener("click", function () {
+      self.previousMonth();
+    });
+    this.nextMonthBtn.addEventListener("click", function () {
+      self.nextMonth();
+    });
     this.workDurationSelect.addEventListener("change", function (e) {
       const newDuration = parseInt(e.target.value) * 60;
       chrome.runtime.sendMessage({
@@ -133,6 +141,82 @@ class PomodoroTimer {
     });
   }
 
+  previousMonth() {
+    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
+    this.renderCalendar();
+  }
+
+  nextMonth() {
+    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
+    this.renderCalendar();
+  }
+
+  getColorForCount(count) {
+    if (count === 0) return '#fff8e1';
+    if (count < 2) return '#fff8e1';
+    if (count < 4) return '#c8e6c9';
+    if (count < 6) return '#81c784';
+    if (count < 8) return '#4db8ff';
+    if (count < 10) return '#1e88e5';
+    return '#1565c0';
+  }
+
+  renderCalendar() {
+    const year = this.currentCalendarDate.getFullYear();
+    const month = this.currentCalendarDate.getMonth();
+
+    // Update header
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    this.monthYearDisplay.textContent = monthNames[month] + " " + year;
+
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Get today's date
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDate = today.getDate();
+
+    // Clear previous days
+    this.calendarDaysContainer.innerHTML = '';
+
+    // Add empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-day empty';
+      this.calendarDaysContainer.appendChild(emptyCell);
+    }
+
+    // Add days of month
+    const self = this;
+    chrome.storage.local.get(['dailyPomodoros'], function (data) {
+      const dailyPomodoros = data.dailyPomodoros || {};
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+
+        const dateString = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const count = dailyPomodoros[dateString] || 0;
+        const color = self.getColorForCount(count);
+
+        dayCell.style.backgroundColor = color;
+        dayCell.textContent = day;
+        dayCell.title = dateString + ': ' + count + ' pomodoros';
+
+        // Highlight today's date with red border
+        if (year === todayYear && month === todayMonth && day === todayDate) {
+          dayCell.classList.add('today');
+        }
+
+        self.calendarDaysContainer.appendChild(dayCell);
+      }
+    });
+  }
+
   switchTab(tabName) {
     this.tabBtns.forEach(function (btn) {
       btn.classList.remove("active");
@@ -145,7 +229,7 @@ class PomodoroTimer {
     if (activeBtn) activeBtn.classList.add("active");
     if (activeContent) activeContent.classList.add("active");
     if (tabName === "stats") {
-      this.updateStats();
+      this.renderCalendar();
     }
   }
 
@@ -235,15 +319,6 @@ class PomodoroTimer {
     // Update session type for styling
     const sessionType = state.isWorkSession ? 'work' : 'break';
     document.querySelector('.container').setAttribute('data-session-type', sessionType);
-
-    // Update stats
-    this.pomodoroCountEl.textContent = String(state.sessionsDone);
-    const workHours = Math.floor(state.totalWorkTime / 3600);
-    const workMins = Math.floor((state.totalWorkTime % 3600) / 60);
-    this.totalWorkTimeEl.textContent = workHours + "h " + workMins + "m";
-    const breakHours = Math.floor(state.totalBreakTime / 3600);
-    const breakMins = Math.floor((state.totalBreakTime % 3600) / 60);
-    this.totalBreakTimeEl.textContent = breakHours + "h " + breakMins + "m";
   }
 
   startDisplayRefresh() {

@@ -114,21 +114,51 @@
       </div>
     </div>
 
-    <!-- Statistics Tab -->
+    <!-- Calendar Tab -->
     <div class="tab-content" data-tab="stats">
-      <div class="stats-container">
-        <h2>Today's Statistics</h2>
-        <div class="stat-item">
-          <span>Pomodoros Completed</span>
-          <span id="pomodoroCount">0</span>
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" id="prevMonthBtn">‹</button>
+          <h2 id="monthYearDisplay">January 2025</h2>
+          <button class="calendar-nav-btn" id="nextMonthBtn">›</button>
         </div>
-        <div class="stat-item">
-          <span>Total Work Time</span>
-          <span id="totalWorkTime">0h 0m</span>
+        <div class="calendar-legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #fff8e1;"></div>
+            <span>0</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #c8e6c9;"></div>
+            <span>2</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #81c784;"></div>
+            <span>4</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #4db8ff;"></div>
+            <span>6</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #1e88e5;"></div>
+            <span>8</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #1565c0;"></div>
+            <span>10+</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span>Total Break Time</span>
-          <span id="totalBreakTime">0h 0m</span>
+        <div class="calendar-grid">
+          <div class="calendar-weekdays">
+            <div class="weekday">Sun</div>
+            <div class="weekday">Mon</div>
+            <div class="weekday">Tue</div>
+            <div class="weekday">Wed</div>
+            <div class="weekday">Thu</div>
+            <div class="weekday">Fri</div>
+            <div class="weekday">Sat</div>
+          </div>
+          <div class="calendar-days" id="calendarDays"></div>
         </div>
       </div>
     </div>

@@ -38,6 +38,23 @@ function loadState() {
     });
 }
 
+function getDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
+}
+
+function incrementDailyPomodoro() {
+    const dateString = getDateString();
+    chrome.storage.local.get(['dailyPomodoros'], function (data) {
+        const dailyPomodoros = data.dailyPomodoros || {};
+        dailyPomodoros[dateString] = (dailyPomodoros[dateString] || 0) + 1;
+        chrome.storage.local.set({ dailyPomodoros: dailyPomodoros });
+    });
+}
+
 function startTimer() {
     if (timerInterval) return;
 
@@ -92,6 +109,7 @@ function sessionComplete() {
     if (timerState.isWorkSession) {
         timerState.sessionsDone = timerState.sessionsDone + 1;
         timerState.totalWorkTime = timerState.totalWorkTime + timerState.workDuration;
+        incrementDailyPomodoro();
         timerState.isWorkSession = false;
         timerState.timeRemaining = timerState.breakDuration;
     } else {
@@ -190,6 +208,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         timerState.sessionsDone = 0;
         timerState.totalWorkTime = 0;
         timerState.totalBreakTime = 0;
+        chrome.storage.local.set({ dailyPomodoros: {} });
         saveState();
         sendResponse({ success: true });
     }
