@@ -371,7 +371,7 @@ input:checked + .slider::before {
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 10px;
+  gap: 4px;
   padding: 12px 0;
 }
 
@@ -432,7 +432,7 @@ input:checked + .slider::before {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-height: 0;
 }
 
@@ -454,14 +454,16 @@ input:checked + .slider::before {
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  flex: 1;
+  gap: 4px;
+  /* Fix: prevent the grid from stretching and creating large gaps */
+  grid-auto-rows: 40px; /* ensure each row is fixed height */
+  align-content: start; /* pack rows to the top */
   width: 100%;
 }
 
 .calendar-day {
   width: 100%;
-  height: 45px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
