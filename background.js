@@ -38,6 +38,13 @@ function loadState() {
     });
 }
 
+function stopTimerInterval() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
 function getDateString() {
     const now = new Date();
     const year = now.getFullYear();
@@ -75,10 +82,7 @@ function startTimer() {
 
 function pauseTimer() {
     timerState.isRunning = false;
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    stopTimerInterval();
     timerState.lastUpdateTime = Date.now();
     saveState();
     updateBadgeDisplay();
@@ -86,10 +90,7 @@ function pauseTimer() {
 
 function resetTimer() {
     timerState.isRunning = false;
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    stopTimerInterval();
     timerState.timeRemaining = timerState.isWorkSession ? timerState.workDuration : timerState.breakDuration;
     timerState.lastUpdateTime = Date.now();
     saveState();
@@ -97,15 +98,13 @@ function resetTimer() {
 }
 
 function sessionComplete() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    stopTimerInterval();
     timerState.isRunning = false;
 
     // Announce session completion
     announceSession(timerState.isWorkSession);
 
+    // Track completion stats
     if (timerState.isWorkSession) {
         timerState.sessionsDone = timerState.sessionsDone + 1;
         timerState.totalWorkTime = timerState.totalWorkTime + timerState.workDuration;
@@ -168,49 +167,58 @@ function updateBadgeDisplay() {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'getState') {
-        sendResponse({ state: timerState });
-    } else if (request.action === 'startTimer') {
-        timerState.workDuration = request.workDuration || timerState.workDuration;
-        timerState.breakDuration = request.breakDuration || timerState.breakDuration;
-        startTimer();
-        sendResponse({ success: true });
-    } else if (request.action === 'pauseTimer') {
-        pauseTimer();
-        sendResponse({ success: true });
-    } else if (request.action === 'resetTimer') {
-        resetTimer();
-        sendResponse({ success: true });
-    } else if (request.action === 'updateSettings') {
-        timerState.workDuration = request.workDuration || timerState.workDuration;
-        timerState.breakDuration = request.breakDuration || timerState.breakDuration;
-        if (!timerState.isRunning) {
-            timerState.timeRemaining = timerState.isWorkSession ? timerState.workDuration : timerState.breakDuration;
-        }
-        saveState();
-        sendResponse({ success: true });
-    } else if (request.action === 'toggleSession') {
-        if (!timerState.isRunning) {
-            timerState.isWorkSession = request.isWorkSession;
-            timerState.timeRemaining = timerState.isWorkSession ? timerState.workDuration : timerState.breakDuration;
-        }
-        saveState();
-        sendResponse({ success: true });
-    } else if (request.action === 'showNotification') {
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: request.iconUrl || 'icons/icon-128.png',
-            title: request.title,
-            message: request.message,
-            priority: 2
-        });
-    } else if (request.action === 'resetStats') {
-        timerState.sessionsDone = 0;
-        timerState.totalWorkTime = 0;
-        timerState.totalBreakTime = 0;
-        chrome.storage.local.set({ dailyPomodoros: {} });
-        saveState();
-        sendResponse({ success: true });
+    console.log("action", request.action);
+
+    switch (request.action) {
+        case 'getState':
+            sendResponse({ state: timerState });
+            break;
+        case 'startTimer':
+            startTimer();
+            sendResponse({ success: true });
+            break;
+        case 'pauseTimer':
+            pauseTimer();
+            sendResponse({ success: true });
+            break;
+        case 'resetTimer':
+            resetTimer();
+            sendResponse({ success: true });
+            break;
+        case 'updateSettings':
+            timerState.workDuration = request.workDuration || timerState.workDuration;
+            timerState.breakDuration = request.breakDuration || timerState.breakDuration;
+            if (!timerState.isRunning) {
+                timerState.timeRemaining = timerState.isWorkSession ? timerState.workDuration : timerState.breakDuration;
+            }
+            saveState();
+            sendResponse({ success: true });
+            break;
+        case 'toggleSession':
+            if (!timerState.isRunning) {
+                timerState.isWorkSession = request.isWorkSession;
+                timerState.timeRemaining = timerState.isWorkSession ? timerState.workDuration : timerState.breakDuration;
+            }
+            saveState();
+            sendResponse({ success: true });
+            break;
+        case 'showNotification':
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: request.iconUrl || 'icons/icon-128.png',
+                title: request.title,
+                message: request.message,
+                priority: 2
+            });
+            break;
+        case 'resetStats':
+            timerState.sessionsDone = 0;
+            timerState.totalWorkTime = 0;
+            timerState.totalBreakTime = 0;
+            chrome.storage.local.set({ dailyPomodoros: {} });
+            saveState();
+            sendResponse({ success: true });
+            break;
     }
 });
 
