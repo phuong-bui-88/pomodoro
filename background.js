@@ -13,8 +13,23 @@ let timerState = {
 
 let timerInterval = null;
 
+// Create offscreen document for audio playback
+async function setupOffscreenDocument() {
+    const offscreenUrl = chrome.runtime.getURL('offscreen.html');
+    const existing = await chrome.offscreen.hasDocument();
+    if (!existing) {
+        await chrome.offscreen.createDocument({
+            url: offscreenUrl,
+            reasons: ['AUDIO_PLAYBACK'],
+            justification: 'Playing timer notification sound'
+        });
+    }
+}
+
+// Initialize offscreen document on install
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Pomodoro Timer extension installed');
+    setupOffscreenDocument();
     loadState();
 });
 
@@ -122,11 +137,30 @@ function sessionComplete() {
     updateBadgeDisplay();
 }
 
+function playNotificationSound() {
+    try {
+        // Ensure offscreen document exists
+        setupOffscreenDocument().then(() => {
+            // Send message to offscreen document to play sound
+            chrome.runtime.sendMessage({
+                action: 'playSound'
+            }).catch((error) => {
+                console.log("Offscreen message error: " + error);
+            });
+        });
+    } catch (e) {
+        console.log("Sound error: " + e);
+    }
+}
+
 function announceSession(wasWorkSession) {
     try {
         const message = wasWorkSession ? "Time for a break!" : "Break is over, time to work!";
         const totalCompleteText = `Total Complete: ${timerState.sessionsDone}`;
         const fullMessage = message + "\n" + totalCompleteText;
+
+        // Play sound notification
+        playNotificationSound();
 
         // Show desktop notification
         chrome.notifications.create({
@@ -138,7 +172,7 @@ function announceSession(wasWorkSession) {
             requireInteraction: true
         });
 
-        // Try to find open popup tab and send audio/speech message
+        // Try to find open popup tab and send message to update UI
         chrome.tabs.query({}, function (tabs) {
             tabs.forEach(tab => {
                 chrome.tabs.sendMessage(tab.id, {

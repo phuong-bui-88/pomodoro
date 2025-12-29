@@ -3,7 +3,8 @@
   "name": "Pomodoro Timer",
   "version": "1.0.0",
   "description": "A Pomodoro timer extension to boost your productivity",
-  "permissions": ["notifications", "storage"],
+  "permissions": ["notifications", "storage", "offscreen"],
+  "host_permissions": [],
   "background": {
     "service_worker": "background.js"
   },
