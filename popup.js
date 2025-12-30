@@ -4,7 +4,6 @@ class PomodoroTimer {
     this.setupEventListeners();
     this.syncWithBackground();
     this.startDisplayRefresh();
-    this.setupMessageListener();
   }
 
   initializeElements() {
@@ -35,15 +34,6 @@ class PomodoroTimer {
     this.storagePercentage = document.getElementById("storagePercentage");
     this.currentCalendarDate = new Date();
     this.updateStorageInfo();
-  }
-
-  setupMessageListener() {
-    const self = this;
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === 'playTimerAlert') {
-        self.playTimerAlert(request.message, request.wasWorkSession);
-      }
-    });
   }
 
   playTimerAlert(message, wasWorkSession) {
@@ -366,6 +356,7 @@ class PomodoroTimer {
       const self = this;
       chrome.runtime.sendMessage({ action: "resetStats" }, () => {
         self.syncWithBackground();
+        self.updateStorageInfo();
       });
     }
   }

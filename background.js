@@ -202,19 +202,6 @@ function announceSession(wasWorkSession) {
                 priority: 2,
                 requireInteraction: true
             });
-
-            // Try to find open popup tab and send message to update UI
-            chrome.tabs.query({}, function (tabs) {
-                tabs.forEach(tab => {
-                    chrome.tabs.sendMessage(tab.id, {
-                        action: "playTimerAlert",
-                        message: message,
-                        wasWorkSession: wasWorkSession
-                    }).catch(() => {
-                        // Tab doesn't have content script, ignore error
-                    });
-                });
-            });
         });
     } catch (e) {
         console.log("Announcement error: " + e);
