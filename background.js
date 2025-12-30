@@ -13,6 +13,15 @@ let timerState = {
 
 let timerInterval = null;
 
+// Keep service worker alive with periodic ping
+setInterval(() => {
+    chrome.runtime.sendMessage({
+        action: 'keepAlive'
+    }).catch(() => {
+        // Keep-alive message, errors are expected
+    });
+}, 25000); // Ping every 25 seconds to prevent service worker from unloading
+
 // Create offscreen document for audio playback
 async function setupOffscreenDocument() {
     const offscreenUrl = chrome.runtime.getURL('offscreen.html');
@@ -156,31 +165,38 @@ function playNotificationSound() {
 function announceSession(wasWorkSession) {
     try {
         const message = wasWorkSession ? "Time for a break!" : "Break is over, time to work!";
-        const totalCompleteText = `Total Complete: ${timerState.sessionsDone}`;
-        const fullMessage = message + "\n" + totalCompleteText;
 
-        // Play sound notification
-        playNotificationSound();
+        // Get today's total pomodoros
+        const dateString = getDateString();
+        chrome.storage.local.get(['dailyPomodoros'], function (data) {
+            const dailyPomodoros = data.dailyPomodoros || {};
+            const todayTotal = dailyPomodoros[dateString] || 0;
+            const totalCompleteText = `Total Complete: ${todayTotal}`;
+            const fullMessage = message + "\n" + totalCompleteText;
 
-        // Show desktop notification
-        chrome.notifications.create({
-            type: "basic",
-            iconUrl: "icons/icon-128.png",
-            title: wasWorkSession ? "Break Time!" : "Work Time!",
-            message: fullMessage,
-            priority: 2,
-            requireInteraction: true
-        });
+            // Play sound notification
+            playNotificationSound();
 
-        // Try to find open popup tab and send message to update UI
-        chrome.tabs.query({}, function (tabs) {
-            tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, {
-                    action: "playTimerAlert",
-                    message: message,
-                    wasWorkSession: wasWorkSession
-                }).catch(() => {
-                    // Tab doesn't have content script, ignore error
+            // Show desktop notification
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon-128.png",
+                title: wasWorkSession ? "Break Time!" : "Work Time!",
+                message: fullMessage,
+                priority: 2,
+                requireInteraction: true
+            });
+
+            // Try to find open popup tab and send message to update UI
+            chrome.tabs.query({}, function (tabs) {
+                tabs.forEach(tab => {
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: "playTimerAlert",
+                        message: message,
+                        wasWorkSession: wasWorkSession
+                    }).catch(() => {
+                        // Tab doesn't have content script, ignore error
+                    });
                 });
             });
         });
@@ -201,7 +217,7 @@ function updateBadgeDisplay() {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("action", request.action);
+    // console.log("action1", request.action, timerState);
 
     switch (request.action) {
         case 'getState':

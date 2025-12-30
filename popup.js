@@ -16,6 +16,7 @@ class PomodoroTimer {
     this.breakDurationSelect = document.getElementById("breakDuration");
     this.toggleSwitch = document.getElementById("workBreakToggle");
     this.sessionLabel = document.getElementById("sessionLabel");
+    this.totalCompleteLabel = document.getElementById("totalCompleteLabel");
     this.soundNotification = document.getElementById("soundNotification");
     this.desktopNotification = document.getElementById("desktopNotification");
     this.autoStartBreak = document.getElementById("autoStartBreak");
@@ -26,7 +27,12 @@ class PomodoroTimer {
     this.monthYearDisplay = document.getElementById("monthYearDisplay");
     this.prevMonthBtn = document.getElementById("prevMonthBtn");
     this.nextMonthBtn = document.getElementById("nextMonthBtn");
+    this.storageUsed = document.getElementById("storageUsed");
+    this.storageTotal = document.getElementById("storageTotal");
+    this.storageProgress = document.getElementById("storageProgress");
+    this.storagePercentage = document.getElementById("storagePercentage");
     this.currentCalendarDate = new Date();
+    this.updateStorageInfo();
   }
 
   setupMessageListener() {
@@ -285,6 +291,7 @@ class PomodoroTimer {
     const displayText = minuteStr + ":" + secondStr;
     this.timerDisplay.textContent = displayText;
     this.sessionLabel.textContent = state.isWorkSession ? "Work" : "Break";
+    this.totalCompleteLabel.textContent = `Total Complete: ${state.sessionsDone}`;
 
     // Update buttons
     if (state.isRunning) {
@@ -325,6 +332,7 @@ class PomodoroTimer {
     const self = this;
     setInterval(() => {
       self.syncWithBackground();
+      self.updateStorageInfo();
     }, 500); // Update display every 500ms to match background timer
   }
 
@@ -334,6 +342,45 @@ class PomodoroTimer {
       const self = this;
       chrome.runtime.sendMessage({ action: "resetStats" }, () => {
         self.syncWithBackground();
+      });
+    }
+  }
+
+  updateStorageInfo() {
+    const self = this;
+    
+    // Get storage quota and usage
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.getBytesInUse(null, function (bytesInUse) {
+        // Chrome typically allocates 10MB per extension for local storage
+        const totalBytes = 10 * 1024 * 1024; // 10 MB
+        const usedBytes = bytesInUse;
+        const percentage = Math.round((usedBytes / totalBytes) * 100);
+
+        // Format bytes to KB or MB
+        const formatBytes = (bytes) => {
+          if (bytes < 1024) {
+            return bytes + ' B';
+          } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(2) + ' KB';
+          } else {
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+          }
+        };
+
+        // Update DOM elements
+        if (self.storageUsed) {
+          self.storageUsed.textContent = formatBytes(usedBytes);
+        }
+        if (self.storageTotal) {
+          self.storageTotal.textContent = formatBytes(totalBytes);
+        }
+        if (self.storageProgress) {
+          self.storageProgress.style.width = percentage + '%';
+        }
+        if (self.storagePercentage) {
+          self.storagePercentage.textContent = percentage + '%';
+        }
       });
     }
   }

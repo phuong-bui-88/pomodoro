@@ -34,7 +34,7 @@
 
     <!-- Timer Tab -->
     <div class="tab-content active" data-tab="timer">
-      <div class="section-label">Others</div>
+      <div class="section-label" id="totalCompleteLabel">Total Complete: 0</div>
       
       <div class="settings-group">
         <div class="duration-control">
@@ -180,6 +180,25 @@
           <span>Auto-start Break</span>
         </label>
         <button id="resetStatsBtn" class="btn btn-danger">Reset Statistics</button>
+        
+        <!-- Storage Info -->
+        <div class="storage-info">
+          <h3>Storage Usage</h3>
+          <div class="storage-details">
+            <div class="storage-item">
+              <span class="storage-label">Used:</span>
+              <span class="storage-value" id="storageUsed">0 KB</span>
+            </div>
+            <div class="storage-item">
+              <span class="storage-label">Total:</span>
+              <span class="storage-value" id="storageTotal">10 MB</span>
+            </div>
+          </div>
+          <div class="storage-bar">
+            <div class="storage-progress" id="storageProgress"></div>
+          </div>
+          <div class="storage-percentage" id="storagePercentage">0%</div>
+        </div>
       </div>
     </div>
   </div>
