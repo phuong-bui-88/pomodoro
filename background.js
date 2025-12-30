@@ -125,9 +125,6 @@ function sessionComplete() {
     stopTimerInterval();
     timerState.isRunning = false;
 
-    // Announce session completion
-    announceSession(timerState.isWorkSession);
-
     // Track completion stats
     if (timerState.isWorkSession) {
         timerState.sessionsDone = timerState.sessionsDone + 1;
@@ -160,6 +157,9 @@ function sessionComplete() {
     timerState.lastUpdateTime = Date.now();
     saveState();
     updateBadgeDisplay();
+
+    // Announce session completion after updating state
+    announceSession(!timerState.isWorkSession);
 }
 
 function playNotificationSound() {
@@ -180,28 +180,19 @@ function playNotificationSound() {
 
 function announceSession(wasWorkSession) {
     try {
-        const message = wasWorkSession ? "Time for a break!" : "Break is over, time to work!";
+        const totalCompleteText = `Total Complete: ${timerState.sessionsDone}`;
 
-        // Get today's total pomodoros
-        const dateString = getDateString();
-        chrome.storage.local.get(['dailyPomodoros'], function (data) {
-            const dailyPomodoros = data.dailyPomodoros || {};
-            const todayTotal = dailyPomodoros[dateString] || 0;
-            const totalCompleteText = `Total Complete: ${todayTotal}`;
-            const fullMessage = message + "\n" + totalCompleteText;
+        // Play sound notification
+        playNotificationSound();
 
-            // Play sound notification
-            playNotificationSound();
-
-            // Show desktop notification
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "icons/icon-128.png",
-                title: wasWorkSession ? "Break Time!" : "Work Time!",
-                message: fullMessage,
-                priority: 2,
-                requireInteraction: true
-            });
+        // Show desktop notification
+        chrome.notifications.create({
+            type: "basic",
+            iconUrl: "icons/icon-128.png",
+            title: wasWorkSession ? "☕ Break Time!" : "💼 Work Time!",
+            message: totalCompleteText,
+            priority: 2,
+            requireInteraction: true
         });
     } catch (e) {
         console.log("Announcement error: " + e);
