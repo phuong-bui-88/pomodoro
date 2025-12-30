@@ -132,7 +132,23 @@ function sessionComplete() {
     if (timerState.isWorkSession) {
         timerState.sessionsDone = timerState.sessionsDone + 1;
         timerState.totalWorkTime = timerState.totalWorkTime + timerState.workDuration;
-        incrementDailyPomodoro();
+
+        // Track daily pomodoro count and work minutes
+        const dateString = getDateString();
+        const workMinutes = Math.round(timerState.workDuration / 60);
+        chrome.storage.local.get(['dailyPomodoros', 'dailyWorkMinutes'], function (data) {
+            const dailyPomodoros = data.dailyPomodoros || {};
+            const dailyWorkMinutes = data.dailyWorkMinutes || {};
+
+            dailyPomodoros[dateString] = (dailyPomodoros[dateString] || 0) + 1;
+            dailyWorkMinutes[dateString] = (dailyWorkMinutes[dateString] || 0) + workMinutes;
+
+            chrome.storage.local.set({
+                dailyPomodoros: dailyPomodoros,
+                dailyWorkMinutes: dailyWorkMinutes
+            });
+        });
+
         timerState.isWorkSession = false;
         timerState.timeRemaining = timerState.breakDuration;
     } else {
@@ -265,7 +281,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             timerState.sessionsDone = 0;
             timerState.totalWorkTime = 0;
             timerState.totalBreakTime = 0;
-            chrome.storage.local.set({ dailyPomodoros: {} });
+            chrome.storage.local.set({
+                dailyPomodoros: {},
+                dailyWorkMinutes: {}
+            });
             saveState();
             sendResponse({ success: true });
             break;

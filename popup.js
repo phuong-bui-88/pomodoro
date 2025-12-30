@@ -27,6 +27,8 @@ class PomodoroTimer {
     this.monthYearDisplay = document.getElementById("monthYearDisplay");
     this.prevMonthBtn = document.getElementById("prevMonthBtn");
     this.nextMonthBtn = document.getElementById("nextMonthBtn");
+    this.monthlyTotal = document.getElementById("monthlyTotal");
+    this.monthlyHours = document.getElementById("monthlyHours");
     this.storageUsed = document.getElementById("storageUsed");
     this.storageTotal = document.getElementById("storageTotal");
     this.storageProgress = document.getElementById("storageProgress");
@@ -198,8 +200,11 @@ class PomodoroTimer {
 
     // Add days of month
     const self = this;
-    chrome.storage.local.get(['dailyPomodoros'], function (data) {
+    chrome.storage.local.get(['dailyPomodoros', 'dailyWorkMinutes'], function (data) {
       const dailyPomodoros = data.dailyPomodoros || {};
+      const dailyWorkMinutes = data.dailyWorkMinutes || {};
+      let monthlyTotal = 0;
+      let totalWorkMinutes = 0;
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
@@ -207,11 +212,14 @@ class PomodoroTimer {
 
         const dateString = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
         const count = dailyPomodoros[dateString] || 0;
+        const workMinutes = dailyWorkMinutes[dateString] || 0;
+        monthlyTotal += count;
+        totalWorkMinutes += workMinutes;
         const color = self.getColorForCount(count);
 
         dayCell.style.backgroundColor = color;
         dayCell.textContent = day;
-        dayCell.title = dateString + ': ' + count + ' pomodoros';
+        dayCell.title = dateString + ': ' + count + ' pomodoros (' + workMinutes + 'm)';
 
         // Highlight today's date with red border
         if (year === todayYear && month === todayMonth && day === todayDate) {
@@ -219,6 +227,22 @@ class PomodoroTimer {
         }
 
         self.calendarDaysContainer.appendChild(dayCell);
+      }
+
+      // Update monthly stats using actual work minutes
+      const hours = Math.floor(totalWorkMinutes / 60);
+      const minutes = totalWorkMinutes % 60;
+
+      let hoursText = hours + 'h';
+      if (minutes > 0) {
+        hoursText += ' ' + minutes + 'm';
+      }
+
+      if (self.monthlyTotal) {
+        self.monthlyTotal.textContent = monthlyTotal;
+      }
+      if (self.monthlyHours) {
+        self.monthlyHours.textContent = hoursText;
       }
     });
   }
@@ -348,7 +372,7 @@ class PomodoroTimer {
 
   updateStorageInfo() {
     const self = this;
-    
+
     // Get storage quota and usage
     if (chrome.storage && chrome.storage.local) {
       chrome.storage.local.getBytesInUse(null, function (bytesInUse) {
